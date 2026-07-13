@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="pageTitle">Shubham Info - Staff Admission Form</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Noto Sans', 'Noto Sans Devanagari', sans-serif; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- Top bar with language toggle -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
+    <div class="max-w-2xl mx-auto flex items-center justify-between px-4 py-3">
+      <span class="font-semibold text-slate-800 text-lg">Shubham Info</span>
+      <button id="langToggleBtn" class="text-sm font-medium text-blue-600 border border-blue-600 rounded-full px-4 py-1.5 hover:bg-blue-50 transition">
+        <span data-i18n="langToggle">हिंदी में देखें</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-6">
+
+    <!-- Heading -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-slate-800" data-i18n="heading">Staff Admission Form</h1>
+      <p class="text-slate-500 text-sm mt-1" data-i18n="subheading">Please fill in your details carefully. Fields marked * are required.</p>
+    </div>
+
+    <!-- Auto-compression note -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6">
+      <p class="text-sm text-blue-800" data-i18n="autoCompressNote">Your photos will be automatically resized and compressed when you upload them — no need to compress them yourself.</p>
+    </div>
+
+    <!-- Form -->
+    <form id="admissionForm" class="bg-white rounded-xl border border-slate-200 p-5 space-y-5">
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="name">Full Name *</label>
+        <input type="text" id="fieldName" required data-i18n-placeholder="namePlaceholder"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="mobile">Mobile Number *</label>
+        <input type="tel" id="fieldMobile" required maxlength="10" pattern="[0-9]{10}" data-i18n-placeholder="mobilePlaceholder"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="bankAcc">Bank Account Number *</label>
+        <input type="text" id="fieldBankAcc" required data-i18n-placeholder="bankAccPlaceholder"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="ifsc">Bank IFSC Code *</label>
+        <input type="text" id="fieldIfsc" required data-i18n-placeholder="ifscPlaceholder"
+          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none uppercase">
+      </div>
+
+      <hr class="border-slate-200">
+
+      <!-- File uploads -->
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="aadhar">Aadhar Card Upload *</label>
+        <input type="file" id="fieldAadhar" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
+        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="pan">PAN Card Upload *</label>
+        <input type="file" id="fieldPan" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
+        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="passbook">Bank Passbook Photo *</label>
+        <input type="file" id="fieldPassbook" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
+        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="passport">Passport Size Photo *</label>
+        <input type="file" id="fieldPassport" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
+        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="signature">Signature Upload *</label>
+        <p class="text-xs text-slate-500 mb-1" data-i18n="signatureHint">Sign on plain paper, take a clear photo, and upload it here.</p>
+        <input type="file" id="fieldSignature" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
+        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
+      </div>
+
+      <!-- Message area -->
+      <div id="formMessage" class="hidden text-sm rounded-lg px-3 py-2.5"></div>
+
+      <button type="submit" id="submitBtn"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition disabled:opacity-50 disabled:cursor-not-allowed">
+        <span data-i18n="submit">Submit Form</span>
+      </button>
+    </form>
+
+    <p class="text-center text-xs text-slate-400 mt-6">Shubham Info</p>
+  </main>
+
+  <script src="lang.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
