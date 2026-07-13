@@ -98,6 +98,9 @@ function renderTable(rows) {
     tr.innerHTML = `
       <td class="px-4 py-3 font-medium text-slate-800">${escapeHtml(row.name)}</td>
       <td class="px-4 py-3">${escapeHtml(row.mobile_no)}</td>
+      <td class="px-4 py-3">${escapeHtml(row.qualification || "-")}</td>
+      <td class="px-4 py-3">${escapeHtml(row.institute || "-")}</td>
+      <td class="px-4 py-3">${escapeHtml(row.passing_year || "-")}</td>
       <td class="px-4 py-3">${escapeHtml(row.bank_acc_no)}</td>
       <td class="px-4 py-3">${escapeHtml(row.ifsc_code)}</td>
       <td class="px-4 py-3">
@@ -298,7 +301,9 @@ document.getElementById("exportBtn").addEventListener("click", async () => {
   exportBtn.disabled = true;
   exportBtn.textContent = "Preparing file...";
 
-  let query = supabaseClient.from("submissions").select("name, mobile_no, bank_acc_no, ifsc_code, created_at");
+  let query = supabaseClient.from("submissions")
+    .select("name, mobile_no, qualification, institute, passing_year, bank_acc_no, ifsc_code, created_at");
+  
   if (currentSearch) {
     query = query.or(`name.ilike.%${currentSearch}%,mobile_no.ilike.%${currentSearch}%`);
   }
@@ -323,6 +328,9 @@ document.getElementById("exportBtn").addEventListener("click", async () => {
   const sheetData = data.map((row) => ({
     "Name": row.name,
     "Mobile Number": row.mobile_no,
+    "Qualification": row.qualification || "",
+    "Institute": row.institute || "",
+    "Passing Year": row.passing_year || "",
     "Bank Account Number": row.bank_acc_no,
     "IFSC Code": row.ifsc_code,
     "Submitted On": new Date(row.created_at).toLocaleString("en-IN"),
