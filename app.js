@@ -103,6 +103,9 @@ form.addEventListener("submit", async (e) => {
   const t = translations[currentLang];
   const name = document.getElementById("fieldName").value.trim();
   const mobile = document.getElementById("fieldMobile").value.trim();
+  const qualification = document.getElementById("fieldQualification").value;
+  const institute = document.getElementById("fieldInstitute").value.trim();
+  const passingYear = document.getElementById("fieldPassingYear").value.trim();
   const bankAcc = document.getElementById("fieldBankAcc").value.trim();
   const ifsc = document.getElementById("fieldIfsc").value.trim().toUpperCase();
 
@@ -156,10 +159,13 @@ form.addEventListener("submit", async (e) => {
     });
     await Promise.all(uploadPromises);
 
-    // Insert record
+    // Insert record with new fields
     const { error: insertErr } = await supabaseClient.from("submissions").insert({
       name,
       mobile_no: mobile,
+      qualification,
+      institute,
+      passing_year: passingYear || null,
       bank_acc_no: bankAcc,
       ifsc_code: ifsc,
       ...uploadResults,
