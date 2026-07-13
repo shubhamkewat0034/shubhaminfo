@@ -1,160 +1,202 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title data-i18n="pageTitle">Shubham Info - Staff Admission Form</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  body { font-family: 'Noto Sans', 'Noto Sans Devanagari', sans-serif; }
-</style>
-</head>
-<body class="bg-slate-50 min-h-screen">
+// ==================== LANGUAGE SETUP ====================
+document.addEventListener("DOMContentLoaded", () => {
+  const savedLang = localStorage.getItem("shubhaminfo_lang") || "en";
+  applyLanguage(savedLang);
+});
 
-  <!-- Top bar with language toggle -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
-    <div class="max-w-2xl mx-auto flex items-center justify-between px-4 py-3">
-      <span class="font-semibold text-slate-800 text-lg">Shubham Info</span>
-      <button id="langToggleBtn" class="text-sm font-medium text-blue-600 border border-blue-600 rounded-full px-4 py-1.5 hover:bg-blue-50 transition">
-        <span data-i18n="langToggle">हिंदी में देखें</span>
-      </button>
-    </div>
-  </header>
+document.getElementById("langToggleBtn").addEventListener("click", () => {
+  applyLanguage(currentLang === "en" ? "hi" : "en");
+});
 
-  <main class="max-w-2xl mx-auto px-4 py-6">
+// ==================== IMAGE COMPRESSION ====================
+// Compresses an image file down using canvas, targeting under maxKB.
+// Returns a Promise<Blob>.
+function compressImage(file, maxWidth = 1000, maxKB = 300) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
 
-    <!-- Heading -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold text-slate-800" data-i18n="heading">Staff Admission Form</h1>
-      <p class="text-slate-500 text-sm mt-1" data-i18n="subheading">Please fill in your details carefully. Fields marked * are required.</p>
-    </div>
+    reader.onload = (e) => { img.src = e.target.result; };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
 
-    <!-- Auto-compression note -->
-    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6">
-      <p class="text-sm text-blue-800" data-i18n="autoCompressNote">Your photos will be automatically resized and compressed when you upload them — no need to compress them yourself.</p>
-    </div>
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
 
-    <!-- Form -->
-    <form id="admissionForm" class="bg-white rounded-xl border border-slate-200 p-5 space-y-5">
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      canvas.width = width;
+      canvas.height = height;
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="name">Full Name *</label>
-        <input type="text" id="fieldName" required data-i18n-placeholder="namePlaceholder"
-          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-      </div>
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="mobile">Mobile Number *</label>
-        <input type="tel" id="fieldMobile" required maxlength="10" pattern="[0-9]{10}" data-i18n-placeholder="mobilePlaceholder"
-          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-      </div>
+      let quality = 0.8;
 
-      <!-- Education Details -->
-<div>
-  <label class="block text-sm font-medium text-slate-700 mb-1">
-    Highest Qualification
-  </label>
-  <select id="fieldQualification"
-    class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none">
-    <option value="">Select Qualification</option>
-    <option>Below 10th</option>
-    <option>10th Pass</option>
-    <option>12th Pass</option>
-    <option>Diploma</option>
-    <option>ITI</option>
-    <option>Graduate</option>
-    <option>Post Graduate</option>
-    <option>Other</option>
-  </select>
-</div>
+      const tryCompress = () => {
+        canvas.toBlob((blob) => {
+          if (!blob) return reject(new Error("Compression failed"));
+          if (blob.size / 1024 <= maxKB || quality <= 0.3) {
+            resolve(blob);
+          } else {
+            quality -= 0.1;
+            tryCompress();
+          }
+        }, "image/jpeg", quality);
+      };
+      tryCompress();
+    };
+    img.onerror = reject;
+  });
+}
 
-<div>
-  <label class="block text-sm font-medium text-slate-700 mb-1">
-    School / College Name
-  </label>
-  <input
-    type="text"
-    id="fieldInstitute"
-    class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-    placeholder="Enter school or college name">
-</div>
+// Show live size info under each file input after compression preview
+document.querySelectorAll(".fileInput").forEach((input) => {
+  input.addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    const infoEl = input.closest("div").querySelector(".sizeInfo");
+    if (!file) { infoEl.textContent = ""; return; }
+    infoEl.textContent = "Compressing...";
+    try {
+      const compressed = await compressImage(file);
+      infoEl.textContent = `Original: ${(file.size/1024).toFixed(0)} KB -> Compressed: ${(compressed.size/1024).toFixed(0)} KB`;
+      input._compressedBlob = compressed;
+    } catch (err) {
+      infoEl.textContent = "Could not preview compression, will compress on submit.";
+    }
+  });
+});
 
-<div>
-  <label class="block text-sm font-medium text-slate-700 mb-1">
-    Passing Year
-  </label>
-  <input
-    type="number"
-    id="fieldPassingYear"
-    min="1980"
-    max="2100"
-    class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-    placeholder="e.g. 2024">
-</div>
+// ==================== FORM SUBMISSION ====================
+const form = document.getElementById("admissionForm");
+const submitBtn = document.getElementById("submitBtn");
+const formMessage = document.getElementById("formMessage");
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="bankAcc">Bank Account Number *</label>
-        <input type="text" id="fieldBankAcc" required data-i18n-placeholder="bankAccPlaceholder"
-          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-      </div>
+function showMessage(text, type = "error") {
+  formMessage.textContent = text;
+  formMessage.className = `text-sm rounded-lg px-3 py-2.5 ${
+    type === "error" ? "bg-red-50 text-red-700 border border-red-200" : "bg-green-50 text-green-700 border border-green-200"
+  }`;
+  formMessage.classList.remove("hidden");
+  formMessage.scrollIntoView({ behavior: "smooth", block: "center" });
+}
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="ifsc">Bank IFSC Code *</label>
-        <input type="text" id="fieldIfsc" required data-i18n-placeholder="ifscPlaceholder"
-          class="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none uppercase">
-      </div>
+async function uploadFile(mobile, label, inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return null;
+  const blob = inputEl._compressedBlob || await compressImage(file);
+  const path = `${mobile}/${label}_${Date.now()}.jpg`;
+  const { error } = await supabaseClient.storage.from("documents").upload(path, blob, {
+    contentType: "image/jpeg",
+  });
+  if (error) throw error;
+  return path; // store path; admin panel will generate signed URLs for viewing
+}
 
-      <hr class="border-slate-200">
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  formMessage.classList.add("hidden");
 
-      <!-- File uploads -->
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="aadhar">Aadhar Card Upload *</label>
-        <input type="file" id="fieldAadhar" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
-        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
-      </div>
+  const t = translations[currentLang];
+  const name = document.getElementById("fieldName").value.trim();
+  const mobile = document.getElementById("fieldMobile").value.trim();
+  const qualification = document.getElementById("fieldQualification").value;
+  const institute = document.getElementById("fieldInstitute").value.trim();
+  const passingYear = document.getElementById("fieldPassingYear").value.trim();
+  const bankAcc = document.getElementById("fieldBankAcc").value.trim();
+  const ifsc = document.getElementById("fieldIfsc").value.trim().toUpperCase();
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="pan">PAN Card Upload *</label>
-        <input type="file" id="fieldPan" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
-        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
-      </div>
+  if (!name || !/^[0-9]{10}$/.test(mobile) || !bankAcc || !ifsc) {
+    showMessage(t.errorRequired);
+    return;
+  }
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="passbook">Bank Passbook Photo *</label>
-        <input type="file" id="fieldPassbook" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
-        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
-      </div>
+  if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+    showMessage(t.errorIfsc);
+    return;
+  }
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="passport">Passport Size Photo *</label>
-        <input type="file" id="fieldPassport" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
-        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
-      </div>
+  const fileInputs = {
+    aadhar_url: document.getElementById("fieldAadhar"),
+    pan_url: document.getElementById("fieldPan"),
+    passbook_url: document.getElementById("fieldPassbook"),
+    passport_photo_url: document.getElementById("fieldPassport"),
+    signature_url: document.getElementById("fieldSignature"),
+  };
+  for (const key in fileInputs) {
+    if (!fileInputs[key].files[0]) {
+      showMessage(t.errorRequired);
+      return;
+    }
+  }
 
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" data-i18n="signature">Signature Upload *</label>
-        <p class="text-xs text-slate-500 mb-1" data-i18n="signatureHint">Sign on plain paper, take a clear photo, and upload it here.</p>
-        <input type="file" id="fieldSignature" accept="image/*" required class="fileInput w-full text-sm border border-slate-300 rounded-lg px-3 py-2 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700 file:text-sm">
-        <p class="text-xs text-slate-500 mt-1 sizeInfo"></p>
-      </div>
+  submitBtn.disabled = true;
+  submitBtn.textContent = t.submitting;
 
-      <!-- Message area -->
-      <div id="formMessage" class="hidden text-sm rounded-lg px-3 py-2.5"></div>
+  try {
+    // Check for duplicate mobile number first
+    const { data: existing, error: checkErr } = await supabaseClient
+      .from("submissions")
+      .select("id")
+      .eq("mobile_no", mobile)
+      .maybeSingle();
 
-      <button type="submit" id="submitBtn"
-        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg py-3 transition disabled:opacity-50 disabled:cursor-not-allowed">
-        <span data-i18n="submit">Submit Form</span>
-      </button>
-    </form>
+    if (checkErr) throw checkErr;
+    if (existing) {
+      showMessage(t.errorDuplicate);
+      submitBtn.disabled = false;
+      submitBtn.textContent = t.submit;
+      return;
+    }
 
-    <p class="text-center text-xs text-slate-400 mt-6">Shubham Info</p>
-  </main>
+    // Upload all files (compressed) in parallel
+    const uploadResults = {};
+    const uploadPromises = Object.entries(fileInputs).map(async ([key, input]) => {
+      uploadResults[key] = await uploadFile(mobile, key.replace("_url", ""), input);
+    });
+    await Promise.all(uploadPromises);
 
-  <script src="lang.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
-</body>
-</html>
+    // Insert record with new fields
+    const { error: insertErr } = await supabaseClient.from("submissions").insert({
+      name,
+      mobile_no: mobile,
+      qualification,
+      institute,
+      passing_year: passingYear || null,
+      bank_acc_no: bankAcc,
+      ifsc_code: ifsc,
+      ...uploadResults,
+    });
+
+    if (insertErr) {
+      if (insertErr.code === "23505") {
+        showMessage(t.errorDuplicate);
+      } else {
+        throw insertErr;
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = t.submit;
+      return;
+    }
+
+    form.reset();
+    document.querySelectorAll(".sizeInfo").forEach(el => el.textContent = "");
+    showMessage(t.successMsg, "success");
+    submitBtn.textContent = t.submit;
+
+  } catch (err) {
+    console.error(err);
+    const msg = (err && err.message) ? err.message.toLowerCase() : "";
+    if (msg.includes("row-level security") || msg.includes("policy")) {
+      showMessage(translations[currentLang].errorUpload);
+    } else {
+      showMessage(translations[currentLang].errorGeneric);
+    }
+    submitBtn.textContent = translations[currentLang].submit;
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
